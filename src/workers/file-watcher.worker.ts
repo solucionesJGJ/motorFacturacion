@@ -2,7 +2,7 @@ import 'dotenv/config'
 import chokidar from 'chokidar'
 import path from 'path'
 import fs from 'fs/promises'
-import { processBillingFile } from '../services/billing-import.service.js'
+import { importBillingFileToDatabase, processBillingFile } from '../services/billing-import.service.js'
 
 const pendingDir = path.resolve(process.env.INPUT_PENDING_DIR || 'input/pending')
 const processingDir = path.resolve(
@@ -35,9 +35,13 @@ async function handleFile(filePath: string) {
     try {
         processingPath = await moveFile(filePath, processingDir)
 
-        const document = await processBillingFile(processingPath)
+        const result = await importBillingFileToDatabase(processingPath)
 
-        console.log('Documento procesado:', document)
+        console.log('Archivo procesado correctamente:', {
+            filename: path.basename(processingPath),
+            documentId: result.document?.id,
+            xmlPath: result.xmlPath,
+        })
 
         await moveFile(processingPath, processedDir)
     } catch (error) {

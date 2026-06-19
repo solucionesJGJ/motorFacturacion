@@ -15,9 +15,21 @@ import {
     initBillingFileImportModel,
 } from './billing-file-import.model.js'
 
+import {
+    BillingWebhookEvent,
+    initBillingWebhookEventModel,
+} from './billing-webhook-event.model.js'
+
+import {
+    BillingJob,
+    initBillingJobModel,
+} from './billing-job.model.js'
+
 initBillingDocumentModel(sequelize)
 initBillingDocumentItemModel(sequelize)
 initBillingFileImportModel(sequelize)
+initBillingWebhookEventModel(sequelize)
+initBillingJobModel(sequelize)
 
 BillingDocument.hasMany(BillingDocumentItem, {
     foreignKey: 'billing_document_id',
@@ -29,9 +41,21 @@ BillingDocumentItem.belongsTo(BillingDocument, {
     as: 'document',
 })
 
+BillingWebhookEvent.hasMany(BillingJob, {
+    foreignKey: 'webhook_event_id',
+    as: 'jobs',
+})
+
+BillingJob.belongsTo(BillingWebhookEvent, {
+    foreignKey: 'webhook_event_id',
+    as: 'webhook_event',
+})
+
 export {
     sequelize,
     BillingDocument,
     BillingDocumentItem,
     BillingFileImport,
+    BillingWebhookEvent,
+    BillingJob,
 }

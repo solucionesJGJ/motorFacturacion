@@ -1,40 +1,87 @@
-import type { BillingDocumentInput } from '../types/billing.types.js'
 import { isValidRut } from '../utils/rut.util.js'
 
-export function validateBillingInput(input: BillingDocumentInput) {
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null
+}
+
+function isPositiveNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value > 0
+}
+
+function isNonNegativeNumber(value: unknown): value is number {
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+function isNonEmptyString(value: unknown): value is string {
+    return typeof value === 'string' && value.trim().length > 0
+}
+
+export function validateBillingInput(input: unknown) {
     const errors: string[] = []
 
-    if (!input.documentType) {
+    if (!isRecord(input)) {
+        return {
+            valid: false,
+            errors: ['El documento debe ser un objeto'],
+        }
+    }
+
+    const receiver = input.receiver
+    const items = input.items
+    const documentType = input.documentType
+    const folio = input.folio
+
+    if (
+        typeof documentType !== 'number' ||
+        !Number.isInteger(documentType) ||
+        documentType <= 0
+    ) {
         errors.push('documentType es obligatorio')
     }
 
-    if (!input.receiver?.rut) {
-        errors.push('receiver.rut es obligatorio')
-    } else if (!isValidRut(input.receiver.rut)) {
-        errors.push('receiver.rut no es válido')
+    if (
+        folio !== undefined &&
+        (typeof folio !== 'number' || !Number.isInteger(folio) || folio <= 0)
+    ) {
+        errors.push('folio debe ser un entero mayor a 0')
     }
 
-    if (!input.receiver?.razonSocial?.trim()) {
+    if (!isRecord(receiver)) {
+        errors.push('receiver es obligatorio')
+    } else if (!isNonEmptyString(receiver.rut)) {
+        errors.push('receiver.rut es obligatorio')
+    } else if (!isValidRut(receiver.rut)) {
+        errors.push('receiver.rut no es valido')
+    }
+
+    if (!isRecord(receiver) || !isNonEmptyString(receiver.razonSocial)) {
         errors.push('receiver.razonSocial es obligatorio')
     }
 
-    if (!input.items || input.items.length === 0) {
+    if (!Array.isArray(items) || items.length === 0) {
         errors.push('Debe incluir al menos un item')
     }
 
-    input.items?.forEach((item, index) => {
-        if (!item.description?.trim()) {
-            errors.push(`Item ${index + 1}: description es obligatorio`)
-        }
+    if (Array.isArray(items)) {
+        items.forEach((item, index) => {
+            if (!isRecord(item)) {
+                errors.push(`Item ${index + 1}: debe ser un objeto`)
+                return
+            }
 
-        if (!item.quantity || item.quantity <= 0) {
-            errors.push(`Item ${index + 1}: quantity debe ser mayor a 0`)
-        }
+            if (!isNonEmptyString(item.description)) {
+                errors.push(`Item ${index + 1}: description es obligatorio`)
+            }
 
-        if (item.unitPrice < 0) {
-            errors.push(`Item ${index + 1}: unitPrice no puede ser negativo`)
-        }
-    })
+            if (!isPositiveNumber(item.quantity)) {
+                errors.push(`Item ${index + 1}: quantity debe ser mayor a 0`)
+            }
+
+            if (!isNonNegativeNumber(item.unitPrice)) {
+                errors.push(`Item ${index + 1}: unitPrice no puede ser negativo`)
+            }
+        })
+    }
 
     return {
         valid: errors.length === 0,

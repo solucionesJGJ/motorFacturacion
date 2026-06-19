@@ -1,6 +1,7 @@
 import {
     DataTypes,
     Model,
+    Op,
     type CreationOptional,
     type InferAttributes,
     type InferCreationAttributes,
@@ -35,6 +36,10 @@ export class BillingDocument extends Model<
     declare error_message: string | null
     declare createdAt: CreationOptional<Date>
     declare updatedAt: CreationOptional<Date>
+    declare indexes?: CreationOptional<{
+        unique: boolean
+        fields: string[]
+    }>
 }
 
 export function initBillingDocumentModel(sequelize: Sequelize) {
@@ -108,6 +113,20 @@ export function initBillingDocumentModel(sequelize: Sequelize) {
             tableName: 'billing_documents',
             timestamps: true,
             underscored: true,
+            indexes: [
+                {
+                    unique: true,
+                    fields: ['external_provider', 'external_payment_id'],
+                    where: {
+                        external_provider: {
+                            [Op.ne]: null,
+                        },
+                        external_payment_id: {
+                            [Op.ne]: null,
+                        },
+                    },
+                },
+            ],
         },
     )
 

@@ -2,11 +2,17 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import billingRoutes from './routes/billing.routes.js'
+import webhookRoutes from './routes/webhook.routes.js'
+import mockLavaYaRoutes from './routes/mock-lava-ya.routes.js'
 
 const app = express()
 
 app.use(cors())
 app.use(express.json())
+
+app.use('/api/webhooks', webhookRoutes)
+
+app.use('/mock/lava-ya', mockLavaYaRoutes)
 
 app.get('/health', (_req, res) => {
     res.json({
