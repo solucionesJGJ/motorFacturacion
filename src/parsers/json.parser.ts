@@ -1,5 +1,5 @@
 import fs from 'fs/promises'
-import type { BillingDocumentInput } from '../types/billing.type.js'
+import type { BillingDocumentInput } from '../types/billing.types.js'
 
 export async function parseJsonInvoice(
     filePath: string,

@@ -1,35 +1,33 @@
 import type { Request, Response } from 'express'
-import type { BillingDocumentInput } from '../types/billing.type.js'
+import type { BillingDocumentInput } from '../types/billing.types.js'
+import { validateBillingInput } from '../services/billing-validator.service.js'
+import { normalizeBillingInput } from '../services/billing-normalizer.service.js'
+import { createBillingDocument } from '../services/billing-document.service.js'
 
 export async function createInvoiceFromApi(req: Request, res: Response) {
     try {
         const payload = req.body as BillingDocumentInput
 
-        if (!payload.documentType) {
+        const validation = validateBillingInput(payload)
+
+        if (!validation.valid) {
             return res.status(400).json({
                 ok: false,
-                message: 'documentType es obligatorio',
+                message: 'Documento inválido',
+                errors: validation.errors,
             })
         }
 
-        if (!payload.receiver?.rut || !payload.receiver?.razonSocial) {
-            return res.status(400).json({
-                ok: false,
-                message: 'receiver.rut y receiver.razonSocial son obligatorios',
-            })
-        }
+        const normalized = normalizeBillingInput(payload)
 
-        if (!payload.items?.length) {
-            return res.status(400).json({
-                ok: false,
-                message: 'Debe incluir al menos un item',
-            })
-        }
+        const document = await createBillingDocument(normalized, {
+            sourceType: 'api',
+        })
 
         return res.status(201).json({
             ok: true,
-            message: 'Documento recibido correctamente',
-            data: payload,
+            message: 'Documento creado correctamente',
+            data: document,
         })
     } catch (error) {
         console.error(error)

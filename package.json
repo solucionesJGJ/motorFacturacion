@@ -8,7 +8,8 @@
     "dev": "tsx watch src/app.ts",
     "worker": "tsx watch src/workers/file-watcher.worker.ts",
     "start": "node dist/app.js",
-    "build": "tsc"
+    "build": "tsc",
+    "db:sync": "tsx src/database/sync.ts"
   },
   "keywords": [],
   "author": "",
@@ -19,7 +20,10 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "fast-xml-parser": "^5.8.0"
+    "fast-xml-parser": "^5.8.0",
+    "pg": "^8.22.0",
+    "pg-hstore": "^2.3.4",
+    "sequelize": "^6.37.8"
   },
   "devDependencies": {
     "@types/cors": "^2.8.19",

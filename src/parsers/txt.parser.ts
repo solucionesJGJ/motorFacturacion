@@ -2,7 +2,7 @@ import fs from 'fs/promises'
 import type {
     BillingDocumentInput,
     BillingItem,
-} from '../types/billing.type.js'
+} from '../types/billing.types.js'
 
 export async function parseTxtInvoice(
     filePath: string,
