@@ -40,6 +40,7 @@ export class BillingDocument extends Model<
         unique: boolean
         fields: string[]
     }>
+    declare caf_id: string | null
 }
 
 export function initBillingDocumentModel(sequelize: Sequelize) {
@@ -106,6 +107,10 @@ export function initBillingDocumentModel(sequelize: Sequelize) {
             updatedAt: {
                 type: DataTypes.DATE,
                 field: 'updated_at',
+            },
+            caf_id: {
+                type: DataTypes.UUID,
+                allowNull: true,
             },
         },
         {

@@ -4,6 +4,7 @@ import {
     BillingDocumentItem,
     sequelize,
 } from '../models/index.js'
+import { assignNextFolio } from './folio.service.js'
 
 type CreateBillingDocumentOptions = {
     sourceType: string
@@ -18,6 +19,11 @@ export async function createBillingDocument(
     options: CreateBillingDocumentOptions,
 ) {
     return sequelize.transaction(async (transaction) => {
+
+        const assignedFolio = document.folio
+            ? { folio: document.folio, cafId: null }
+            : await assignNextFolio(document.documentType, transaction)
+
         const billingDocument = await BillingDocument.create(
             {
                 source_type: options.sourceType,
@@ -26,7 +32,8 @@ export async function createBillingDocument(
                 external_order_id: options.externalOrderId || null,
                 external_payment_id: options.externalPaymentId || null,
                 document_type: document.documentType,
-                folio: document.folio || null,
+                folio: assignedFolio.folio,
+                caf_id: assignedFolio.cafId,
                 receiver_rut: document.receiverRut,
                 receiver_name: document.receiverName,
                 receiver_giro: document.receiverGiro || null,

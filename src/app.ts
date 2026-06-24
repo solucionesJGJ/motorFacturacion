@@ -4,6 +4,8 @@ import cors from 'cors'
 import billingRoutes from './routes/billing.routes.js'
 import webhookRoutes from './routes/webhook.routes.js'
 import mockLavaYaRoutes from './routes/mock-lava-ya.routes.js'
+import auditRoutes from './routes/audit.routes.js'
+import cafRoutes from './routes/caf.routes.js'
 
 const app = express()
 
@@ -13,6 +15,10 @@ app.use(express.json())
 app.use('/api/webhooks', webhookRoutes)
 
 app.use('/mock/lava-ya', mockLavaYaRoutes)
+
+app.use('/api/audit', auditRoutes)
+
+app.use('/api/cafs', cafRoutes)
 
 app.get('/health', (_req, res) => {
     res.json({

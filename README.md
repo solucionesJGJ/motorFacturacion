@@ -9,7 +9,9 @@ Motor backend en TypeScript/Express para recibir documentos de facturacion desde
 - Worker de archivos para `input/pending`.
 - Worker de jobs para webhooks de pago.
 - Integracion inicial con proveedor Lava Ya.
-- Generacion de XML DTE en `output/xml`.
+- Administracion de CAF y secuencias de folio.
+- Generacion de XML DTE preliminar en `output/xml`.
+- Endpoints de auditoria para jobs y eventos webhook.
 
 ## Requisitos
 
@@ -35,6 +37,14 @@ INPUT_PROCESSED_DIR=input/processed
 INPUT_ERROR_DIR=input/error
 OUTPUT_XML_DIR=output/xml
 
+ISSUER_RUT=76999888-8
+ISSUER_RAZON_SOCIAL=EMISOR DEMO SPA
+ISSUER_GIRO=SERVICIOS
+ISSUER_ACTECO=960909
+ISSUER_DIRECCION=Av. Providencia 100
+ISSUER_COMUNA=Providencia
+ISSUER_CIUDAD=Santiago
+
 LAVAYA_API_URL=http://localhost:4000/mock/lava-ya
 LAVAYA_API_KEY=change-me
 JOB_WORKER_INTERVAL_MS=5000
@@ -58,6 +68,7 @@ npm run test:integration
 - `npm run worker`: observa archivos entrantes.
 - `npm run job-worker`: procesa jobs pendientes de webhooks.
 - `npm run dev:all`: levanta API, worker de archivos y worker de jobs.
+- `npm run start`: ejecuta el build compilado desde `dist/app.js`.
 - `npm test`: compila y ejecuta tests unitarios sin Postgres.
 - `npm run test:integration`: compila y ejecuta pruebas contra Postgres.
 
@@ -140,6 +151,51 @@ Payload minimo:
 
 El webhook registra el evento, evita duplicados por `provider + external_event_id` y crea un job `payment_invoice` cuando corresponde.
 
+### CAF y Folios
+
+Todas las rutas bajo `/api/cafs` usan API key.
+
+```http
+GET /api/cafs
+POST /api/cafs
+```
+
+Ejemplo `POST /api/cafs`:
+
+```json
+{
+  "document_type": 33,
+  "folio_from": 1001,
+  "folio_to": 2000,
+  "caf_xml": "<AUTORIZACION>...</AUTORIZACION>",
+  "private_key": "-----BEGIN PRIVATE KEY-----...",
+  "public_key": "-----BEGIN PUBLIC KEY-----...",
+  "authorization_date": "2026-06-19",
+  "expires_at": "2027-06-19"
+}
+```
+
+Al crear un CAF tambien se crea una secuencia en `billing_folio_sequences`. Cuando un documento llega sin `folio`, el motor toma el siguiente folio activo para el tipo de DTE y emisor configurado.
+
+### Auditoria
+
+Todas las rutas bajo `/api/audit` usan API key.
+
+```http
+GET /api/audit/jobs
+GET /api/audit/jobs/:id
+PATCH /api/audit/jobs/:id/retry
+GET /api/audit/webhook-events
+GET /api/audit/webhook-events/:id
+```
+
+Filtros soportados:
+
+```txt
+/api/audit/jobs?status=failed&provider=lava-ya
+/api/audit/webhook-events?status=received&provider=lava-ya&event_type=payment.paid
+```
+
 ### Mock Lava Ya
 
 Rutas de apoyo local:
@@ -157,7 +213,8 @@ GET /mock/lava-ya/orders/:id
 4. Valida RUT, receptor, items y montos.
 5. Normaliza neto, IVA y total.
 6. Persiste `billing_documents`, `billing_document_items` y `billing_file_imports`.
-7. Mueve el archivo a `input/processed` o `input/error`.
+7. Si el payload no trae folio, asigna el siguiente folio desde el CAF activo.
+8. Mueve el archivo a `input/processed` o `input/error`.
 
 Formato TXT:
 
@@ -182,8 +239,18 @@ ITEM=Servicio adicional|2|5000
 4. `job-worker` consulta el pago y la orden en Lava Ya.
 5. El mapper convierte la orden a `BillingDocumentInput`.
 6. Se crea el documento con `sourceType=webhook`.
-7. Se genera XML DTE preliminar.
-8. El job queda `processed` o vuelve a `pending` hasta 3 intentos.
+7. Se asigna folio si el documento no lo trae.
+8. Se genera XML DTE preliminar.
+9. El job queda `processed` o vuelve a `pending` hasta 3 intentos.
+
+## Flujo CAF y XML
+
+1. Se registra un CAF con `POST /api/cafs`.
+2. El motor crea una secuencia activa para `document_type + issuer_rut + caf_id`.
+3. `createBillingDocument` solicita folio cuando el documento no trae uno.
+4. `assignNextFolio` bloquea la secuencia en transaccion e incrementa `current_folio`.
+5. `POST /api/billing/documents/:id/generate-xml` genera el XML con datos del emisor, receptor, totales y detalle.
+6. El documento queda con `status=xml_generated` y `xml_path`.
 
 ## Estados Relevantes
 
@@ -214,6 +281,7 @@ npm test
 ```
 
 Cubre validacion, normalizacion, parser TXT, middleware de API key y mapper Lava Ya.
+Tambien cubre configuracion de emisor y transiciones de jobs.
 
 Integracion:
 

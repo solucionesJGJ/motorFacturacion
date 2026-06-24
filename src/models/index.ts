@@ -25,11 +25,23 @@ import {
     initBillingJobModel,
 } from './billing-job.model.js'
 
+import {
+    BillingCaf,
+    initBillingCafModel,
+} from './billing-caf.model.js'
+
+import {
+    BillingFolioSequence,
+    initBillingFolioSequenceModel,
+} from './billing-folio-sequence.model.js'
+
 initBillingDocumentModel(sequelize)
 initBillingDocumentItemModel(sequelize)
 initBillingFileImportModel(sequelize)
 initBillingWebhookEventModel(sequelize)
 initBillingJobModel(sequelize)
+initBillingCafModel(sequelize)
+initBillingFolioSequenceModel(sequelize)
 
 BillingDocument.hasMany(BillingDocumentItem, {
     foreignKey: 'billing_document_id',
@@ -51,6 +63,26 @@ BillingJob.belongsTo(BillingWebhookEvent, {
     as: 'webhook_event',
 })
 
+BillingCaf.hasMany(BillingFolioSequence, {
+    foreignKey: 'caf_id',
+    as: 'folio_sequences',
+})
+
+BillingFolioSequence.belongsTo(BillingCaf, {
+    foreignKey: 'caf_id',
+    as: 'caf',
+})
+
+BillingCaf.hasMany(BillingDocument, {
+    foreignKey: 'caf_id',
+    as: 'documents',
+})
+
+BillingDocument.belongsTo(BillingCaf, {
+    foreignKey: 'caf_id',
+    as: 'caf',
+})
+
 export {
     sequelize,
     BillingDocument,
@@ -58,4 +90,6 @@ export {
     BillingFileImport,
     BillingWebhookEvent,
     BillingJob,
+    BillingCaf,
+    BillingFolioSequence
 }

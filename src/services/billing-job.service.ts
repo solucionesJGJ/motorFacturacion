@@ -61,3 +61,22 @@ export async function markJobError(job: BillingJob, error: unknown) {
         error_message: message,
     })
 }
+
+export async function retryFailedBillingJob(jobId: string) {
+    const job = await BillingJob.findByPk(jobId)
+
+    if (!job) {
+        throw new Error('Job no encontrado')
+    }
+
+    if (job.status !== 'failed' && job.status !== 'error') {
+        throw new Error('Solo se pueden reintentar jobs fallidos')
+    }
+
+    await job.update({
+        status: 'pending',
+        error_message: null,
+    })
+
+    return job
+}

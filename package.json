@@ -10,7 +10,7 @@
     "worker": "tsx watch src/workers/file-watcher.worker.ts",
     "job-worker": "tsx watch src/workers/billing-job.worker.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run worker\" \"npm run job-worker\"",
-    "start": "tsx  --env-file=.env.dev src/index.ts",
+    "start": "node dist/app.js",
     "build": "tsc",
     "db:sync": "tsx src/database/sync.ts"
   },
@@ -23,7 +23,8 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
-    "fast-xml-parser": "^5.8.0",
+    "fast-xml-parser": "^5.9.3",
+    "node-forge": "^1.4.0",
     "pg": "^8.22.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.8",
