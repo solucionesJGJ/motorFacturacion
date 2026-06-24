@@ -10,7 +10,7 @@
     "worker": "tsx watch src/workers/file-watcher.worker.ts",
     "job-worker": "tsx watch src/workers/billing-job.worker.ts",
     "dev:all": "concurrently \"npm run dev\" \"npm run worker\" \"npm run job-worker\"",
-    "start": "node dist/app.js",
+    "start": "tsx  --env-file=.env.dev src/index.ts",
     "build": "tsc",
     "db:sync": "tsx src/database/sync.ts"
   },
