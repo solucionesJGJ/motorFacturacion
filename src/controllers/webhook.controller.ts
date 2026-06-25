@@ -2,6 +2,10 @@ import type { Request, Response } from 'express'
 import { registerWebhookEvent } from '../services/webhook-event.service.js'
 import { createBillingJob } from '../services/billing-job.service.js'
 
+/**
+ * Receives a provider payment webhook and records it idempotently.
+ * New events enqueue a billing job; duplicates are acknowledged without a new job.
+ */
 export async function receiveGenericPaymentWebhook(
     req: Request,
     res: Response,

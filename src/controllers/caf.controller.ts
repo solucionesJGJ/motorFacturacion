@@ -6,6 +6,10 @@ import {
 } from '../models/index.js'
 import { getIssuerConfig } from '../config/issuer.config.js'
 
+/**
+ * Registers a CAF range for the configured issuer.
+ * Creates the CAF and its folio sequence in one transaction.
+ */
 export async function createCaf(req: Request, res: Response) {
     try {
         const {

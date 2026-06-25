@@ -38,6 +38,10 @@ async function fileExists(filePath: string) {
     }
 }
 
+/**
+ * Resolves the physical file available for an import retry.
+ * Imports can point to their original path or to the worker error directory.
+ */
 async function resolveImportFilePath(fileImport: BillingFileImport) {
     if (await fileExists(fileImport.original_path)) {
         return fileImport.original_path
@@ -157,6 +161,10 @@ export async function listBillingImports(req: Request, res: Response) {
     }
 }
 
+/**
+ * Reprocesses a previous file import using the same import record.
+ * This keeps audit history stable while creating a fresh billing document.
+ */
 export async function retryBillingImport(req: Request, res: Response) {
     try {
         const id = getParamId(req)
@@ -237,6 +245,10 @@ export async function getBillingFileImportById(req: Request, res: Response) {
     }
 }
 
+/**
+ * Generates the DTE XML for an existing billing document.
+ * The XML generation service also updates status and xml_path on success.
+ */
 export async function generateBillingDocumentXml(req: Request, res: Response) {
     try {
         const id = getParamId(req)

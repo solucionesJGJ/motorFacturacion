@@ -36,6 +36,8 @@ INPUT_PROCESSING_DIR=input/processing
 INPUT_PROCESSED_DIR=input/processed
 INPUT_ERROR_DIR=input/error
 OUTPUT_XML_DIR=output/xml
+SIGN_PRIVATE_KEY_PATH=C:\opt\certs\private-key.pem
+SIGN_CERTIFICATE_PATH=C:\opt\certs\certificate.pem
 
 ISSUER_RUT=76999888-8
 ISSUER_RAZON_SOCIAL=EMISOR DEMO SPA
@@ -98,6 +100,7 @@ POST /api/billing/invoice
 GET /api/billing/documents
 GET /api/billing/documents/:id
 POST /api/billing/documents/:id/generate-xml
+POST /api/billing/documents/:id/sign-xml
 GET /api/billing/imports
 GET /api/billing/imports/:id
 POST /api/billing/imports/:id/retry
@@ -249,8 +252,10 @@ ITEM=Servicio adicional|2|5000
 2. El motor crea una secuencia activa para `document_type + issuer_rut + caf_id`.
 3. `createBillingDocument` solicita folio cuando el documento no trae uno.
 4. `assignNextFolio` bloquea la secuencia en transaccion e incrementa `current_folio`.
-5. `POST /api/billing/documents/:id/generate-xml` genera el XML con datos del emisor, receptor, totales y detalle.
+5. `POST /api/billing/documents/:id/generate-xml` genera el XML con datos del emisor, receptor, totales, detalle y TED cuando el documento tiene CAF asociado.
 6. El documento queda con `status=xml_generated` y `xml_path`.
+7. `POST /api/billing/documents/:id/sign-xml` firma el XML con `SIGN_PRIVATE_KEY_PATH` y `SIGN_CERTIFICATE_PATH`.
+8. El documento queda con `status=signed` y `xml_path` apuntando al archivo firmado.
 
 ## Estados Relevantes
 
@@ -258,6 +263,7 @@ Documentos:
 
 - `validated`
 - `xml_generated`
+- `signed`
 
 Imports:
 
@@ -281,7 +287,7 @@ npm test
 ```
 
 Cubre validacion, normalizacion, parser TXT, middleware de API key y mapper Lava Ya.
-Tambien cubre configuracion de emisor y transiciones de jobs.
+Tambien cubre configuracion de emisor, transiciones de jobs, parser CAF y validacion de configuracion de firma XML.
 
 Integracion:
 
@@ -294,5 +300,7 @@ Requiere Postgres configurado. Crea un TXT temporal, ejecuta `processBillingFile
 ## Notas de Desarrollo
 
 - `sequelize.sync({ alter: true })` esta pensado para desarrollo. Para produccion conviene migraciones versionadas.
-- El XML generado es preliminar; aun no incluye firma, timbre ni envio SII.
+- El TED ya tiene una primera implementacion con CAF asociado. Sin llave privada de CAF usa una firma demo.
+- La firma XML espera llave privada y certificado en PEM. La conversion PFX a PEM queda fuera del motor por ahora.
+- El envio SII aun no esta implementado.
 - Los tests unitarios importan desde `dist`, por eso siempre ejecutan `npm run build` antes.

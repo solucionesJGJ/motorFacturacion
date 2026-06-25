@@ -41,6 +41,9 @@ export class BillingDocument extends Model<
         fields: string[]
     }>
     declare caf_id: string | null
+    declare printed_at: CreationOptional<Date>
+    declare print_count: CreationOptional<number>
+    declare pdf_print_path: CreationOptional<string>    
 }
 
 export function initBillingDocumentModel(sequelize: Sequelize) {
@@ -110,6 +113,19 @@ export function initBillingDocumentModel(sequelize: Sequelize) {
             },
             caf_id: {
                 type: DataTypes.UUID,
+                allowNull: true,
+            },
+            printed_at: {
+                type: DataTypes.DATE,
+                allowNull: true,        
+            },
+            print_count: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                defaultValue: 0,
+            },
+            pdf_print_path: {
+                type: DataTypes.STRING(255),
                 allowNull: true,
             },
         },

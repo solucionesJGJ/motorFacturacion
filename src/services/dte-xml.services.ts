@@ -6,6 +6,7 @@ import {
     BillingDocumentItem,
 } from '../models/index.js'
 import { getIssuerConfig } from '../config/issuer.config.js'
+import { buildTed } from './ted.service.js'
 
 function toInteger(value: unknown) {
     return Math.round(Number(value || 0))
@@ -40,6 +41,15 @@ export async function generateDteXml(documentId: string) {
         PrcItem: toInteger(item.unit_price),
         MontoItem: toInteger(item.net_amount),
     }))
+
+    let tedXml: string | null = null
+
+    try {
+        const ted = await buildTed(documentId)
+        tedXml = ted.tedXml
+    } catch (error) {
+        console.warn('TED no generado todavía:', error)
+    }
 
     const xmlObject = {
         DTE: {
@@ -82,6 +92,12 @@ export async function generateDteXml(documentId: string) {
                 },
 
                 Detalle: detalle,
+                ...(tedXml
+                    ? {
+                        TED_RAW: tedXml,
+                        TmstFirma: new Date().toISOString().slice(0, 19),
+                    }
+                    : {}),
 
                 // Pendiente:
                 // TED: se genera con CAF y llave privada de timbraje.
@@ -90,9 +106,16 @@ export async function generateDteXml(documentId: string) {
         },
     }
 
-    const xml = create(xmlObject).end({
+    let xml = create(xmlObject).end({
         prettyPrint: true,
     })
+
+    if (tedXml) {
+        xml = xml.replace(
+            '</Documento>',
+            `${tedXml}<TmstFirma>${new Date().toISOString().slice(0, 19)}</TmstFirma></Documento>`,
+        )
+    }
 
     const outputDir = path.resolve(process.env.OUTPUT_XML_DIR || 'output/xml')
     await fs.mkdir(outputDir, { recursive: true })

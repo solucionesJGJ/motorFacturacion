@@ -162,6 +162,10 @@ export async function getWebhookEventById(req: Request, res: Response) {
     }
 }
 
+/**
+ * Moves a failed billing job back to pending so the worker can process it again.
+ * Non-failed jobs are rejected by the job service.
+ */
 export async function retryBillingJob(req: Request, res: Response) {
     try {
         const id = getParamId(req)
