@@ -31,7 +31,7 @@ test('requires signing key and certificate paths', async () => {
 
     await assert.rejects(
         () => signXmlFile(xmlPath),
-        /SIGN_PRIVATE_KEY_PATH y SIGN_CERTIFICATE_PATH/,
+        /SIGN_PRIVATE_KEY_PATH no esta configurada/,
     )
 
     restoreEnv('SIGN_PRIVATE_KEY_PATH', previousPrivateKeyPath)

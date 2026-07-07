@@ -6,6 +6,8 @@ import { createBillingDocument } from '../services/billing-document.service.js'
 import { signXmlFile } from '../services/xml-sign.service.js'
 import { BillingDocument } from '../models/index.js'
 import { generatePrintablePdf } from '../services/print/document-print.service.js'
+import { generateThermalTicketFile } from '../services/print/thermal-ticket.service.js'
+import { loadPfxCertificate } from '../services/certificate.service.js'
 
 function getParamId(req: Request) {
     return typeof req.params.id === 'string' ? req.params.id : null
@@ -157,6 +159,55 @@ export async function downloadPrintedDocument(req: Request, res: Response) {
         return res.status(500).json({
             ok: false,
             message: error.message || 'Error descargando PDF',
+        })
+    }
+}
+
+export async function generateBillingThermalTicket(req: Request, res: Response) {
+    try {
+        const id = getParamId(req)
+
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Id invalido',
+            })
+        }
+
+        const result = await generateThermalTicketFile(id)
+
+        return res.json({
+            ok: true,
+            message: 'Ticket térmico generado correctamente',
+            data: result,
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            ok: false,
+            message: error.message || 'Error generando ticket térmico',
+        })
+    }
+}
+
+export async function testCertificate(req: Request, res: Response) {
+    try {
+        const certificate = await loadPfxCertificate()
+
+        return res.json({
+            ok: true,
+            message: 'Certificado leído correctamente',
+            data: {
+                validFrom: certificate.validFrom,
+                validTo: certificate.validTo,
+                subject: certificate.subject,
+                issuer: certificate.issuer,
+                serialNumber: certificate.serialNumber,
+            },
+        })
+    } catch (error: any) {
+        return res.status(500).json({
+            ok: false,
+            message: error.message || 'Error leyendo certificado',
         })
     }
 }

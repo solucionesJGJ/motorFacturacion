@@ -12,6 +12,7 @@
     "dev:all": "concurrently \"npm run dev\" \"npm run worker\" \"npm run job-worker\"",
     "start": "node dist/app.js",
     "build": "tsc",
+    "certs:dev": "node scripts/generate-dev-certs.cjs",
     "db:sync": "tsx src/database/sync.ts"
   },
   "keywords": [],

@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { createInvoiceFromApi, downloadPrintedDocument, printBillingDocument, signBillingDocumentXml } from '../controllers/billing.controller.js'
+import { createInvoiceFromApi, downloadPrintedDocument, generateBillingThermalTicket, printBillingDocument, signBillingDocumentXml, testCertificate } from '../controllers/billing.controller.js'
 import {
     generateBillingDocumentXml,
     getBillingDocumentById,
@@ -20,8 +20,10 @@ router.post('/documents/:id/generate-xml', generateBillingDocumentXml)
 router.post('/documents/:id/sign-xml', signBillingDocumentXml)
 router.post('/documents/:id/print', printBillingDocument)
 router.get('/documents/:id/print/download', downloadPrintedDocument)
+router.post('/documents/:id/thermal-ticket', generateBillingThermalTicket)
 router.get('/imports', listBillingImports)
 router.get('/imports/:id', getBillingFileImportById)
 router.post('/imports/:id/retry', retryBillingImport)
+router.get('/certificate/test', testCertificate)
 
 export default router

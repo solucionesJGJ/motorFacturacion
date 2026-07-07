@@ -11,6 +11,9 @@ Motor backend en TypeScript/Express para recibir documentos de facturacion desde
 - Integracion inicial con proveedor Lava Ya.
 - Administracion de CAF y secuencias de folio.
 - Generacion de XML DTE preliminar en `output/xml`.
+- Firma XML con certificado PEM o PFX.
+- Generacion y firma de EnvioDTE.
+- Cliente SII desacoplado con modo mock y estructura para modo real.
 - Endpoints de auditoria para jobs y eventos webhook.
 
 ## Requisitos
@@ -36,6 +39,10 @@ INPUT_PROCESSING_DIR=input/processing
 INPUT_PROCESSED_DIR=input/processed
 INPUT_ERROR_DIR=input/error
 OUTPUT_XML_DIR=output/xml
+OUTPUT_ENVIOS_DIR=output/envios
+SIGN_MODE=pem
+SIGN_CERT_PFX_PATH=C:\opt\certs\certificado.pfx
+SIGN_CERT_PASSWORD=change-me
 SIGN_PRIVATE_KEY_PATH=C:\opt\certs\private-key.pem
 SIGN_CERTIFICATE_PATH=C:\opt\certs\certificate.pem
 
@@ -50,6 +57,15 @@ ISSUER_CIUDAD=Santiago
 LAVAYA_API_URL=http://localhost:4000/mock/lava-ya
 LAVAYA_API_KEY=change-me
 JOB_WORKER_INTERVAL_MS=5000
+
+SII_MODE=mock
+SII_ENV=certification
+SII_RUT_ENVIA=76999888-8
+SII_RUT_RECEPTOR=60803000-K
+SII_RESOLUTION_DATE=2026-06-19
+SII_RESOLUTION_NUMBER=0
+SII_BASE_URL_CERTIFICATION=https://maullin.sii.cl
+SII_BASE_URL_PRODUCTION=https://palena.sii.cl
 ```
 
 ## Scripts
@@ -101,6 +117,8 @@ GET /api/billing/documents
 GET /api/billing/documents/:id
 POST /api/billing/documents/:id/generate-xml
 POST /api/billing/documents/:id/sign-xml
+POST /api/billing/documents/:id/print
+GET /api/billing/documents/:id/print/download
 GET /api/billing/imports
 GET /api/billing/imports/:id
 POST /api/billing/imports/:id/retry
@@ -199,6 +217,42 @@ Filtros soportados:
 /api/audit/webhook-events?status=received&provider=lava-ya&event_type=payment.paid
 ```
 
+### SII Submissions
+
+Todas las rutas bajo `/api/sii` usan API key.
+
+```http
+POST /api/sii/submissions
+GET /api/sii/submissions
+GET /api/sii/submissions/:id
+GET /api/sii/submissions/:id/status
+POST /api/sii/submissions/:id/generate-envelope
+POST /api/sii/submissions/:id/sign-envelope
+POST /api/sii/submissions/:id/send
+POST /api/sii/submissions/:id/check-status
+```
+
+Ejemplo `POST /api/sii/submissions`:
+
+```json
+{
+  "documentIds": ["uuid-documento-firmado"]
+}
+```
+
+Estados de submission:
+
+- `created`
+- `envelope_generated`
+- `envelope_signed`
+- `sent`
+- `accepted`
+- `rejected`
+- `processing`
+- `error`
+
+En `SII_MODE=mock`, el envio devuelve un `track_id` simulado y la consulta de estado normaliza respuestas a `accepted`, `rejected` o `processing`. En `SII_MODE=real`, la interfaz queda lista pero falla con `SII real mode not configured` hasta configurar la integracion real SII.
+
 ### Mock Lava Ya
 
 Rutas de apoyo local:
@@ -254,8 +308,20 @@ ITEM=Servicio adicional|2|5000
 4. `assignNextFolio` bloquea la secuencia en transaccion e incrementa `current_folio`.
 5. `POST /api/billing/documents/:id/generate-xml` genera el XML con datos del emisor, receptor, totales, detalle y TED cuando el documento tiene CAF asociado.
 6. El documento queda con `status=xml_generated` y `xml_path`.
-7. `POST /api/billing/documents/:id/sign-xml` firma el XML con `SIGN_PRIVATE_KEY_PATH` y `SIGN_CERTIFICATE_PATH`.
+7. `POST /api/billing/documents/:id/sign-xml` firma el XML con certificado PEM o PFX segun `SIGN_MODE`.
 8. El documento queda con `status=signed` y `xml_path` apuntando al archivo firmado.
+
+## Flujo SII Fase 1
+
+1. Crear documento por API, archivo o webhook.
+2. Generar XML: `POST /api/billing/documents/:id/generate-xml`.
+3. Firmar XML: `POST /api/billing/documents/:id/sign-xml`.
+4. Crear submission: `POST /api/sii/submissions`.
+5. Generar EnvioDTE: `POST /api/sii/submissions/:id/generate-envelope`.
+6. Firmar EnvioDTE: `POST /api/sii/submissions/:id/sign-envelope`.
+7. Enviar en modo mock: `POST /api/sii/submissions/:id/send`.
+8. Consultar/actualizar estado: `POST /api/sii/submissions/:id/check-status`.
+9. Ver estado actual: `GET /api/sii/submissions/:id/status`.
 
 ## Estados Relevantes
 
@@ -297,10 +363,31 @@ npm run test:integration
 
 Requiere Postgres configurado. Crea un TXT temporal, ejecuta `processBillingFile`, verifica documento, items e import, y limpia sus datos de prueba.
 
+Verificacion manual sugerida:
+
+```powershell
+npm run db:sync
+npm run dev
+```
+
+Luego ejecutar en orden:
+
+```http
+POST /api/billing/invoice
+POST /api/billing/documents/:id/generate-xml
+POST /api/billing/documents/:id/sign-xml
+POST /api/sii/submissions
+POST /api/sii/submissions/:id/generate-envelope
+POST /api/sii/submissions/:id/sign-envelope
+POST /api/sii/submissions/:id/send
+POST /api/sii/submissions/:id/check-status
+GET  /api/sii/submissions/:id/status
+```
+
 ## Notas de Desarrollo
 
 - `sequelize.sync({ alter: true })` esta pensado para desarrollo. Para produccion conviene migraciones versionadas.
 - El TED ya tiene una primera implementacion con CAF asociado. Sin llave privada de CAF usa una firma demo.
-- La firma XML espera llave privada y certificado en PEM. La conversion PFX a PEM queda fuera del motor por ahora.
-- El envio SII aun no esta implementado.
+- La firma XML acepta PEM o PFX. No se imprimen llaves ni passwords en logs.
+- El envio SII real aun no esta implementado; el modo mock permite validar pipeline y estados.
 - Los tests unitarios importan desde `dist`, por eso siempre ejecutan `npm run build` antes.

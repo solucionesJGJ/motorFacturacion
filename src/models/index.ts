@@ -35,6 +35,16 @@ import {
     initBillingFolioSequenceModel,
 } from './billing-folio-sequence.model.js'
 
+import {
+    BillingSiiSubmission,
+    initBillingSiiSubmissionModel,
+} from './billing-sii-submission.model.js'
+
+import {
+    BillingSiiSubmissionDocument,
+    initBillingSiiSubmissionDocumentModel,
+} from './billing-sii-submission-document.model.js'
+
 initBillingDocumentModel(sequelize)
 initBillingDocumentItemModel(sequelize)
 initBillingFileImportModel(sequelize)
@@ -42,6 +52,8 @@ initBillingWebhookEventModel(sequelize)
 initBillingJobModel(sequelize)
 initBillingCafModel(sequelize)
 initBillingFolioSequenceModel(sequelize)
+initBillingSiiSubmissionModel(sequelize)
+initBillingSiiSubmissionDocumentModel(sequelize)
 
 BillingDocument.hasMany(BillingDocumentItem, {
     foreignKey: 'billing_document_id',
@@ -83,6 +95,26 @@ BillingDocument.belongsTo(BillingCaf, {
     as: 'caf',
 })
 
+BillingSiiSubmission.hasMany(BillingSiiSubmissionDocument, {
+    foreignKey: 'submission_id',
+    as: 'submission_documents',
+})
+
+BillingSiiSubmissionDocument.belongsTo(BillingSiiSubmission, {
+    foreignKey: 'submission_id',
+    as: 'submission',
+})
+
+BillingDocument.hasMany(BillingSiiSubmissionDocument, {
+    foreignKey: 'billing_document_id',
+    as: 'sii_submission_links',
+})
+
+BillingSiiSubmissionDocument.belongsTo(BillingDocument, {
+    foreignKey: 'billing_document_id',
+    as: 'document',
+})
+
 export {
     sequelize,
     BillingDocument,
@@ -91,5 +123,7 @@ export {
     BillingWebhookEvent,
     BillingJob,
     BillingCaf,
-    BillingFolioSequence
+    BillingFolioSequence,
+    BillingSiiSubmission,
+    BillingSiiSubmissionDocument,
 }

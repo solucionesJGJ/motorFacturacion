@@ -6,6 +6,7 @@ import webhookRoutes from './routes/webhook.routes.js'
 import mockLavaYaRoutes from './routes/mock-lava-ya.routes.js'
 import auditRoutes from './routes/audit.routes.js'
 import cafRoutes from './routes/caf.routes.js'
+import siiRoutes from './routes/sii.routes.js'
 
 const app = express()
 
@@ -19,6 +20,8 @@ app.use('/mock/lava-ya', mockLavaYaRoutes)
 app.use('/api/audit', auditRoutes)
 
 app.use('/api/cafs', cafRoutes)
+
+app.use('/api/sii', siiRoutes)
 
 app.get('/health', (_req, res) => {
     res.json({
