@@ -6,3 +6,5 @@ output
 certs/
 *.pfx
 *.pem
+dev/
+postman/*.pdf

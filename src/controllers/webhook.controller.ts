@@ -15,10 +15,7 @@ export async function receiveGenericPaymentWebhook(
         const payload = req.body
 
         const externalEventId =
-            payload.event_id ||
-            payload.id ||
-            payload.eventId ||
-            payload.uuid
+            payload.event_id || payload.id || payload.eventId || payload.uuid
 
         const externalPaymentId =
             payload.payment_id ||

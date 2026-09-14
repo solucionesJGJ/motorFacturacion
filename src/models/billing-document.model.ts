@@ -26,6 +26,18 @@ export class BillingDocument extends Model<
     declare receiver_address: string | null
     declare receiver_comuna: string | null
     declare receiver_ciudad: string | null
+    declare dispatch_transfer_indicator: number | null
+    declare dispatch_type: number | null
+    declare dispatch_vehicle_plate: string | null
+    declare dispatch_carrier_rut: string | null
+    declare dispatch_driver_rut: string | null
+    declare dispatch_driver_name: string | null
+    declare dispatch_destination_address: string | null
+    declare dispatch_destination_commune: string | null
+    declare dispatch_destination_city: string | null
+    declare dispatch_departure_date: string | null
+    declare dispatch_departure_time: string | null
+    declare dispatch_arrival_date: string | null
     declare net_amount: number
     declare tax_amount: number
     declare total_amount: number
@@ -43,7 +55,7 @@ export class BillingDocument extends Model<
     declare caf_id: string | null
     declare printed_at: CreationOptional<Date>
     declare print_count: CreationOptional<number>
-    declare pdf_print_path: CreationOptional<string>    
+    declare pdf_print_path: CreationOptional<string>
 }
 
 export function initBillingDocumentModel(sequelize: Sequelize) {
@@ -79,6 +91,69 @@ export function initBillingDocumentModel(sequelize: Sequelize) {
             receiver_address: DataTypes.STRING(255),
             receiver_comuna: DataTypes.STRING(100),
             receiver_ciudad: DataTypes.STRING(100),
+            /**
+             * =================================================
+             * DTE 52 - DATOS DE DESPACHO / TRANSPORTE
+             * =================================================
+             *
+             * Para DTE 33 todos estos campos permanecen NULL.
+             */
+            dispatch_transfer_indicator: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                validate: {
+                    min: 1,
+                    max: 9,
+                },
+            },
+            dispatch_type: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                validate: {
+                    min: 1,
+                    max: 3,
+                },
+            },
+            dispatch_vehicle_plate: {
+                type: DataTypes.STRING(8),
+                allowNull: true,
+            },
+            dispatch_carrier_rut: {
+                type: DataTypes.STRING(20),
+                allowNull: true,
+            },
+            dispatch_driver_rut: {
+                type: DataTypes.STRING(20),
+                allowNull: true,
+            },
+            dispatch_driver_name: {
+                type: DataTypes.STRING(30),
+                allowNull: true,
+            },
+            dispatch_destination_address: {
+                type: DataTypes.STRING(70),
+                allowNull: true,
+            },
+            dispatch_destination_commune: {
+                type: DataTypes.STRING(20),
+                allowNull: true,
+            },
+            dispatch_destination_city: {
+                type: DataTypes.STRING(20),
+                allowNull: true,
+            },
+            dispatch_departure_date: {
+                type: DataTypes.DATEONLY,
+                allowNull: true,
+            },
+            dispatch_departure_time: {
+                type: DataTypes.STRING(8),
+                allowNull: true,
+            },
+            dispatch_arrival_date: {
+                type: DataTypes.DATEONLY,
+                allowNull: true,
+            },
             net_amount: {
                 type: DataTypes.DECIMAL(12, 2),
                 allowNull: false,
@@ -117,7 +192,7 @@ export function initBillingDocumentModel(sequelize: Sequelize) {
             },
             printed_at: {
                 type: DataTypes.DATE,
-                allowNull: true,        
+                allowNull: true,
             },
             print_count: {
                 type: DataTypes.INTEGER,

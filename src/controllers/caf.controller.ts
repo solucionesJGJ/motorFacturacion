@@ -1,9 +1,5 @@
 import type { Request, Response } from 'express'
-import {
-    BillingCaf,
-    BillingFolioSequence,
-    sequelize,
-} from '../models/index.js'
+import { BillingCaf, BillingFolioSequence, sequelize } from '../models/index.js'
 import { getIssuerConfig } from '../config/issuer.config.js'
 
 /**
@@ -26,7 +22,8 @@ export async function createCaf(req: Request, res: Response) {
         if (!document_type || !folio_from || !folio_to || !caf_xml) {
             return res.status(400).json({
                 ok: false,
-                message: 'document_type, folio_from, folio_to y caf_xml son obligatorios',
+                message:
+                    'document_type, folio_from, folio_to y caf_xml son obligatorios',
             })
         }
 

@@ -8,6 +8,8 @@ import { BillingDocument } from '../models/index.js'
 import { generatePrintablePdf } from '../services/print/document-print.service.js'
 import { generateThermalTicketFile } from '../services/print/thermal-ticket.service.js'
 import { loadPfxCertificate } from '../services/certificate.service.js'
+import { processBillingDocument } from '../services/billing-process.service.js'
+import path from 'path'
 
 function getParamId(req: Request) {
     return typeof req.params.id === 'string' ? req.params.id : null
@@ -26,20 +28,30 @@ export async function createInvoiceFromApi(req: Request, res: Response) {
         if (!validation.valid) {
             return res.status(400).json({
                 ok: false,
+
                 message: 'Documento inválido',
+
                 errors: validation.errors,
             })
         }
 
         const normalized = normalizeBillingInput(payload)
 
+        const externalId = payload.externalId?.trim() || null
+
         const document = await createBillingDocument(normalized, {
             sourceType: 'api',
+
+            externalProvider: externalId ? 'TL' : null,
+
+            externalOrderId: externalId,
         })
 
         return res.status(201).json({
             ok: true,
+
             message: 'Documento creado correctamente',
+
             data: document,
         })
     } catch (error) {
@@ -47,6 +59,7 @@ export async function createInvoiceFromApi(req: Request, res: Response) {
 
         return res.status(500).json({
             ok: false,
+
             message: 'Error creando documento',
         })
     }
@@ -163,7 +176,10 @@ export async function downloadPrintedDocument(req: Request, res: Response) {
     }
 }
 
-export async function generateBillingThermalTicket(req: Request, res: Response) {
+export async function generateBillingThermalTicket(
+    req: Request,
+    res: Response,
+) {
     try {
         const id = getParamId(req)
 
@@ -208,6 +224,116 @@ export async function testCertificate(req: Request, res: Response) {
         return res.status(500).json({
             ok: false,
             message: error.message || 'Error leyendo certificado',
+        })
+    }
+}
+
+export async function processBillingDocumentFromApi(
+    req: Request,
+    res: Response,
+) {
+    try {
+        const id = req.params.id as string
+
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Id inválido',
+            })
+        }
+
+        const result = await processBillingDocument(id)
+
+        return res.json({
+            ok: true,
+
+            message: 'Documento procesado correctamente',
+
+            data: {
+                document_id: result.document.id,
+
+                document_type: result.document.document_type,
+
+                folio: result.document.folio,
+
+                status: result.document.status,
+
+                net_amount: Number(result.document.net_amount),
+
+                tax_amount: Number(result.document.tax_amount),
+
+                total_amount: Number(result.document.total_amount),
+
+                sii: {
+                    mode: result.siiMode,
+
+                    track_id: result.document.sii_track_id,
+
+                    status: result.submission?.status ?? result.document.status,
+                },
+            },
+        })
+    } catch (error: any) {
+        console.error('Error procesando documento:', error)
+
+        return res.status(500).json({
+            ok: false,
+
+            message: error?.message || 'Error procesando documento',
+        })
+    }
+}
+
+export async function getBillingDocumentPdf(req: Request, res: Response) {
+    try {
+        const id = getParamId(req)
+
+        if (!id) {
+            return res.status(400).json({
+                ok: false,
+                message: 'Id inválido',
+            })
+        }
+
+        const document = await BillingDocument.findByPk(id)
+
+        if (!document) {
+            return res.status(404).json({
+                ok: false,
+                message: 'Documento no encontrado',
+            })
+        }
+
+        /*
+         * Por ahora permitimos impresión
+         * cuando el documento ya tiene XML.
+         *
+         * Más adelante podemos endurecer
+         * esto a status === accepted.
+         */
+        if (!document.xml_path) {
+            return res.status(400).json({
+                ok: false,
+                message: 'El documento todavía no tiene XML generado',
+            })
+        }
+
+        const result = await generatePrintablePdf(id)
+
+        res.setHeader('Content-Type', 'application/pdf')
+
+        res.setHeader(
+            'Content-Disposition',
+            `inline; filename="${result.fileName}"`,
+        )
+
+        return res.sendFile(path.resolve(result.filePath))
+    } catch (error: any) {
+        console.error('Error obteniendo PDF DTE:', error)
+
+        return res.status(500).json({
+            ok: false,
+            message: error?.message || 'Error generando PDF',
         })
     }
 }

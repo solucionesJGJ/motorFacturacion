@@ -28,11 +28,9 @@ export function initBillingSiiSubmissionDocumentModel(sequelize: Sequelize) {
             },
             submission_id: {
                 type: DataTypes.UUID,
-                allowNull: false,
             },
             billing_document_id: {
                 type: DataTypes.UUID,
-                allowNull: false,
             },
             createdAt: {
                 type: DataTypes.DATE,
@@ -48,12 +46,12 @@ export function initBillingSiiSubmissionDocumentModel(sequelize: Sequelize) {
             tableName: 'billing_sii_submission_documents',
             timestamps: true,
             underscored: true,
-            indexes: [
+            /* indexes: [
                 {
                     unique: true,
                     fields: ['submission_id', 'billing_document_id'],
                 },
-            ],
+            ], */
         },
     )
 

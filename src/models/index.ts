@@ -20,15 +20,9 @@ import {
     initBillingWebhookEventModel,
 } from './billing-webhook-event.model.js'
 
-import {
-    BillingJob,
-    initBillingJobModel,
-} from './billing-job.model.js'
+import { BillingJob, initBillingJobModel } from './billing-job.model.js'
 
-import {
-    BillingCaf,
-    initBillingCafModel,
-} from './billing-caf.model.js'
+import { BillingCaf, initBillingCafModel } from './billing-caf.model.js'
 
 import {
     BillingFolioSequence,

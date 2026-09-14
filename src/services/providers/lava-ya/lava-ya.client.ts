@@ -4,7 +4,7 @@ export class LavaYaClient {
     constructor(
         private readonly baseUrl: string,
         private readonly apiKey: string,
-    ) { }
+    ) {}
 
     private getHeaders() {
         return {
@@ -20,7 +20,9 @@ export class LavaYaClient {
         })
 
         if (!response.ok) {
-            throw new Error(`Error consultando pago Lava Ya: ${response.status}`)
+            throw new Error(
+                `Error consultando pago Lava Ya: ${response.status}`,
+            )
         }
 
         return response.json() as Promise<LavaYaPayment>
@@ -32,7 +34,9 @@ export class LavaYaClient {
         })
 
         if (!response.ok) {
-            throw new Error(`Error consultando orden Lava Ya: ${response.status}`)
+            throw new Error(
+                `Error consultando orden Lava Ya: ${response.status}`,
+            )
         }
 
         return response.json() as Promise<LavaYaOrder>

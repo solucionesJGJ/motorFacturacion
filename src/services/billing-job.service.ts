@@ -54,7 +54,9 @@ export async function markJobProcessed(job: BillingJob) {
 
 export async function markJobError(job: BillingJob, error: unknown) {
     const message =
-        error instanceof Error ? error.message : 'Error desconocido procesando job'
+        error instanceof Error
+            ? error.message
+            : 'Error desconocido procesando job'
 
     await job.update({
         status: job.attempts >= 3 ? 'failed' : 'pending',

@@ -1,7 +1,4 @@
-import {
-    BillingDocument,
-    BillingDocumentItem,
-} from '../../models/index.js'
+import { BillingDocument, BillingDocumentItem } from '../../models/index.js'
 import { getIssuerConfig } from '../../config/issuer.config.js'
 
 function line(width = 48) {

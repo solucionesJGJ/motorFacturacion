@@ -1,8 +1,5 @@
 import type { Request, Response } from 'express'
-import {
-    BillingJob,
-    BillingWebhookEvent,
-} from '../models/index.js'
+import { BillingJob, BillingWebhookEvent } from '../models/index.js'
 import { retryFailedBillingJob } from '../services/billing-job.service.js'
 
 function getParamId(req: Request) {
@@ -121,7 +118,6 @@ export async function getWebhookEvents(req: Request, res: Response) {
 
 export async function getWebhookEventById(req: Request, res: Response) {
     try {
-
         const id = getParamId(req)
 
         if (!id) {
@@ -130,7 +126,6 @@ export async function getWebhookEventById(req: Request, res: Response) {
                 message: 'Id invalido',
             })
         }
-
 
         const event = await BillingWebhookEvent.findByPk(id, {
             include: [

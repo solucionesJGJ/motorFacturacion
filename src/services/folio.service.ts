@@ -1,9 +1,5 @@
 import { Transaction } from 'sequelize'
-import {
-    BillingCaf,
-    BillingFolioSequence,
-    sequelize,
-} from '../models/index.js'
+import { BillingCaf, BillingFolioSequence, sequelize } from '../models/index.js'
 import { getIssuerConfig } from '../config/issuer.config.js'
 
 type AssignedFolio = {
@@ -39,12 +35,16 @@ export async function assignNextFolio(
         })
 
         if (!sequence) {
-            throw new Error(`No existe secuencia activa de folios para DTE ${documentType}`)
+            throw new Error(
+                `No existe secuencia activa de folios para DTE ${documentType}`,
+            )
         }
 
         if (sequence.current_folio > sequence.folio_to) {
             await sequence.update({ active: false }, { transaction: trx })
-            throw new Error(`CAF sin folios disponibles para DTE ${documentType}`)
+            throw new Error(
+                `CAF sin folios disponibles para DTE ${documentType}`,
+            )
         }
 
         const folio = sequence.current_folio

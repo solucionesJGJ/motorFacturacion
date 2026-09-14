@@ -16,7 +16,9 @@ export async function loadPfxCertificate(): Promise<LoadedCertificate> {
     const password = process.env.SIGN_CERT_PASSWORD
 
     if (!pfxPath || !password) {
-        throw new Error('SIGN_CERT_PFX_PATH y SIGN_CERT_PASSWORD son obligatorios')
+        throw new Error(
+            'SIGN_CERT_PFX_PATH y SIGN_CERT_PASSWORD son obligatorios',
+        )
     }
 
     const pfxBuffer = await fs.readFile(pfxPath)

@@ -2,9 +2,14 @@ import 'dotenv/config'
 import chokidar from 'chokidar'
 import path from 'path'
 import fs from 'fs/promises'
-import { importBillingFileToDatabase, processBillingFile } from '../services/billing-import.service.js'
+import {
+    importBillingFileToDatabase,
+    processBillingFile,
+} from '../services/billing-import.service.js'
 
-const pendingDir = path.resolve(process.env.INPUT_PENDING_DIR || 'input/pending')
+const pendingDir = path.resolve(
+    process.env.INPUT_PENDING_DIR || 'input/pending',
+)
 const processingDir = path.resolve(
     process.env.INPUT_PROCESSING_DIR || 'input/processing',
 )

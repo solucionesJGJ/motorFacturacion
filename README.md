@@ -101,6 +101,11 @@ Authorization: Bearer change-me
 
 ## Endpoints
 
+La referencia detallada de contratos HTTP, parametros, respuestas y codigos de
+estado esta en [`docs/API.md`](docs/API.md). Tambien se incluye la coleccion
+[`postman/motor-facturacion-sii.postman_collection.json`](postman/motor-facturacion-sii.postman_collection.json),
+lista para importar en Postman.
+
 ### Salud
 
 ```http
@@ -119,12 +124,15 @@ POST /api/billing/documents/:id/generate-xml
 POST /api/billing/documents/:id/sign-xml
 POST /api/billing/documents/:id/print
 GET /api/billing/documents/:id/print/download
+POST /api/billing/documents/:id/thermal-ticket
 GET /api/billing/imports
 GET /api/billing/imports/:id
 POST /api/billing/imports/:id/retry
+GET /api/billing/certificate/test
 ```
 
-`GET /documents` y `GET /imports` soportan:
+`GET /documents` y `GET /imports` soportan paginacion (limite por defecto 50,
+maximo 200) y filtro por estado:
 
 ```txt
 ?limit=50&offset=0&status=validated
@@ -391,3 +399,17 @@ GET  /api/sii/submissions/:id/status
 - La firma XML acepta PEM o PFX. No se imprimen llaves ni passwords en logs.
 - El envio SII real aun no esta implementado; el modo mock permite validar pipeline y estados.
 - Los tests unitarios importan desde `dist`, por eso siempre ejecutan `npm run build` antes.
+
+## Postman
+
+Importar `postman/motor-facturacion-sii.postman_collection.json` y ajustar las
+variables de coleccion:
+
+- `baseUrl`: por defecto `http://localhost:4000`.
+- `apiKey`: debe coincidir con `BILLING_API_KEY`.
+
+La coleccion guarda automaticamente `documentId`, `submissionId`, `jobId`,
+`webhookEventId` e `importId` cuando las respuestas correspondientes contienen
+datos. Las solicitudes estan ordenadas por dominio; para probar el pipeline SII,
+ejecutar primero la creacion del documento y luego las operaciones de XML,
+firma y submission.

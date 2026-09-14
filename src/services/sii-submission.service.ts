@@ -85,7 +85,9 @@ export async function createSubmissionFromDocuments(documentIds: string[]) {
         )
     }
 
-    const notSigned = documents.filter((document) => document.status !== 'signed')
+    const notSigned = documents.filter(
+        (document) => document.status !== 'signed',
+    )
 
     if (notSigned.length > 0) {
         throw new Error(

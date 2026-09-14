@@ -63,7 +63,9 @@ async function processBillingFileWithImport(
     }
 }
 
-async function parseBillingFile(filePath: string): Promise<BillingDocumentInput> {
+async function parseBillingFile(
+    filePath: string,
+): Promise<BillingDocumentInput> {
     const ext = path.extname(filePath).toLowerCase()
 
     if (ext === '.json') {

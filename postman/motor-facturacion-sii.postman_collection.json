@@ -1,0 +1,239 @@
+{
+  "info": {
+    "_postman_id": "e7301158-5275-4c04-a3bf-e34ae3f1f0ea",
+    "name": "Motor Facturacion SII",
+    "description": "Coleccion de la API del motor de facturacion. Configure baseUrl y apiKey. Las solicitudes de creacion guardan IDs como variables de coleccion.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      { "key": "key", "value": "x-api-key", "type": "string" },
+      { "key": "value", "value": "{{apiKey}}", "type": "string" },
+      { "key": "in", "value": "header", "type": "string" }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:4000", "type": "string" },
+    { "key": "apiKey", "value": "change-me", "type": "string" },
+    { "key": "documentId", "value": "", "type": "string" },
+    { "key": "importId", "value": "", "type": "string" },
+    { "key": "submissionId", "value": "", "type": "string" },
+    { "key": "jobId", "value": "", "type": "string" },
+    { "key": "webhookEventId", "value": "", "type": "string" },
+    { "key": "provider", "value": "lava-ya", "type": "string" },
+    { "key": "paymentId", "value": "pay-123", "type": "string" },
+    { "key": "orderId", "value": "order-123", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "Salud",
+      "item": [
+        {
+          "name": "Estado del servicio",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "Retorna ok y el nombre del servicio."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "pm.test('Servicio disponible', () => pm.expect(pm.response.json().ok).to.eql(true));"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "Facturacion",
+      "item": [
+        {
+          "name": "Crear factura",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"documentType\": 33,\n  \"receiver\": {\n    \"rut\": \"76999888-8\",\n    \"razonSocial\": \"CLIENTE DEMO SPA\",\n    \"giro\": \"SERVICIOS\",\n    \"address\": \"Av. Providencia 100\",\n    \"comuna\": \"Providencia\",\n    \"ciudad\": \"Santiago\"\n  },\n  \"items\": [\n    {\n      \"description\": \"Servicio base\",\n      \"quantity\": 1,\n      \"unitPrice\": 10000\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/billing/invoice",
+            "description": "Valida, normaliza y persiste una factura. Si se omite folio, requiere un CAF activo."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));", "const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('documentId', json.data.id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Listar documentos",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/documents?limit=50&offset=0", "description": "Filtros opcionales: limit (maximo 200), offset y status." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "if (!pm.collectionVariables.get('documentId') && json.data && json.data[0]) pm.collectionVariables.set('documentId', json.data[0].id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Obtener documento",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}", "description": "Incluye los items del documento." }
+        },
+        {
+          "name": "Generar XML",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}/generate-xml", "description": "Genera el DTE XML y actualiza el documento." }
+        },
+        {
+          "name": "Firmar XML",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}/sign-xml", "description": "Firma un XML previamente generado." }
+        },
+        {
+          "name": "Generar PDF de impresion",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}/print", "description": "Genera un PDF imprimible. Requiere XML generado." }
+        },
+        {
+          "name": "Descargar PDF",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}/print/download", "description": "Descarga el PDF generado." }
+        },
+        {
+          "name": "Generar ticket termico",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/billing/documents/{{documentId}}/thermal-ticket", "description": "Genera un ticket de texto termico." }
+        },
+        {
+          "name": "Probar certificado",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/certificate/test", "description": "Lee el PFX configurado y retorna metadatos no sensibles." }
+        }
+      ]
+    },
+    {
+      "name": "Imports",
+      "item": [
+        {
+          "name": "Listar imports",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/imports?limit=50&offset=0", "description": "Filtros opcionales: limit, offset y status." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "if (json.data && json.data[0]) pm.collectionVariables.set('importId', json.data[0].id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Obtener import",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/billing/imports/{{importId}}" }
+        },
+        {
+          "name": "Reintentar import",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/billing/imports/{{importId}}/retry", "description": "Reprocesa el archivo si aun esta disponible." }
+        }
+      ]
+    },
+    {
+      "name": "CAF",
+      "item": [
+        {
+          "name": "Listar CAF",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/cafs" }
+        },
+        {
+          "name": "Crear CAF",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"document_type\": 33,\n  \"folio_from\": 1001,\n  \"folio_to\": 2000,\n  \"caf_xml\": \"<AUTORIZACION>...</AUTORIZACION>\",\n  \"private_key\": \"-----BEGIN PRIVATE KEY-----...\",\n  \"public_key\": \"-----BEGIN PUBLIC KEY-----...\",\n  \"authorization_date\": \"2026-06-19\",\n  \"expires_at\": \"2027-06-19\"\n}"
+            },
+            "url": "{{baseUrl}}/api/cafs",
+            "description": "Reemplace el XML y las llaves de ejemplo por datos CAF validos."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Webhooks",
+      "item": [
+        {
+          "name": "Recibir pago",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"event_id\": \"evt-{{$timestamp}}\",\n  \"payment_id\": \"{{paymentId}}\",\n  \"event_type\": \"payment.paid\"\n}" },
+            "url": "{{baseUrl}}/api/webhooks/{{provider}}/payment",
+            "description": "Registra el evento idempotentemente y crea un job para eventos nuevos."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200 o 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));", "const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('webhookEventId', json.data.id);"], "type": "text/javascript" } }]
+        }
+      ]
+    },
+    {
+      "name": "Auditoria",
+      "item": [
+        {
+          "name": "Listar jobs",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/audit/jobs?provider={{provider}}", "description": "Filtros opcionales: status y provider." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "if (json.data && json.data[0]) pm.collectionVariables.set('jobId', json.data[0].id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Obtener job",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/audit/jobs/{{jobId}}" }
+        },
+        {
+          "name": "Reintentar job fallido",
+          "request": { "method": "PATCH", "header": [], "url": "{{baseUrl}}/api/audit/jobs/{{jobId}}/retry", "description": "Solo acepta jobs en estado failed." }
+        },
+        {
+          "name": "Listar eventos webhook",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/audit/webhook-events?provider={{provider}}", "description": "Filtros opcionales: status, provider y event_type." },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "if (json.data && json.data[0]) pm.collectionVariables.set('webhookEventId', json.data[0].id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Obtener evento webhook",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/audit/webhook-events/{{webhookEventId}}" }
+        }
+      ]
+    },
+    {
+      "name": "SII",
+      "item": [
+        {
+          "name": "Crear submission",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"documentIds\": [\"{{documentId}}\"]\n}" },
+            "url": "{{baseUrl}}/api/sii/submissions",
+            "description": "El documento debe existir y estar firmado."
+          },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 201', () => pm.response.to.have.status(201));", "const json = pm.response.json();", "if (json.data && json.data.id) pm.collectionVariables.set('submissionId', json.data.id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Listar submissions",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/sii/submissions" },
+          "event": [{ "listen": "test", "script": { "exec": ["pm.test('HTTP 200', () => pm.response.to.have.status(200));", "const json = pm.response.json();", "if (!pm.collectionVariables.get('submissionId') && json.data && json.data[0]) pm.collectionVariables.set('submissionId', json.data[0].id);"], "type": "text/javascript" } }]
+        },
+        {
+          "name": "Obtener submission",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}" }
+        },
+        {
+          "name": "Obtener estado",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}/status" }
+        },
+        {
+          "name": "Generar envelope",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}/generate-envelope" }
+        },
+        {
+          "name": "Firmar envelope",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}/sign-envelope" }
+        },
+        {
+          "name": "Enviar submission",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}/send" }
+        },
+        {
+          "name": "Consultar y actualizar estado",
+          "request": { "method": "POST", "header": [], "url": "{{baseUrl}}/api/sii/submissions/{{submissionId}}/check-status" }
+        }
+      ]
+    },
+    {
+      "name": "Mock Lava Ya",
+      "item": [
+        {
+          "name": "Obtener pago mock",
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "header": [], "url": "{{baseUrl}}/mock/lava-ya/payments/{{paymentId}}" }
+        },
+        {
+          "name": "Obtener orden mock",
+          "request": { "auth": { "type": "noauth" }, "method": "GET", "header": [], "url": "{{baseUrl}}/mock/lava-ya/orders/{{orderId}}" }
+        }
+      ]
+    }
+  ]
+}

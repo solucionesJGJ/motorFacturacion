@@ -1,5 +1,9 @@
 import { isValidRut } from '../utils/rut.util.js'
 
+import { validateDte52Dispatch } from './dte52/dte52-validator.service.js'
+
+const SUPPORTED_DOCUMENT_TYPES = new Set<number>([33, 52])
+
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null
 }
@@ -16,6 +20,15 @@ function isNonEmptyString(value: unknown): value is string {
     return typeof value === 'string' && value.trim().length > 0
 }
 
+function isValidDiscount(value: unknown) {
+    return (
+        typeof value === 'number' &&
+        Number.isFinite(value) &&
+        value >= 0 &&
+        value <= 100
+    )
+}
+
 export function validateBillingInput(input: unknown) {
     const errors: string[] = []
 
@@ -27,16 +40,27 @@ export function validateBillingInput(input: unknown) {
     }
 
     const receiver = input.receiver
+
     const items = input.items
+
     const documentType = input.documentType
+
     const folio = input.folio
+
+    const externalId = input.externalId
+
+    const dispatch = input.dispatch
+
+    if (externalId !== undefined && !isNonEmptyString(externalId)) {
+        errors.push('externalId debe ser un string no vacío')
+    }
 
     if (
         typeof documentType !== 'number' ||
         !Number.isInteger(documentType) ||
-        documentType <= 0
+        !SUPPORTED_DOCUMENT_TYPES.has(documentType)
     ) {
-        errors.push('documentType es obligatorio')
+        errors.push('documentType debe ser un DTE soportado: 33 o 52')
     }
 
     if (
@@ -56,6 +80,22 @@ export function validateBillingInput(input: unknown) {
 
     if (!isRecord(receiver) || !isNonEmptyString(receiver.razonSocial)) {
         errors.push('receiver.razonSocial es obligatorio')
+    }
+
+    /**
+     * Las reglas específicas del DTE 52
+     * viven fuera del validador general.
+     */
+    if (documentType === 52) {
+        errors.push(...validateDte52Dispatch(dispatch))
+    }
+
+    /**
+     * DTE 33 conserva su contrato actual:
+     * no acepta bloque dispatch.
+     */
+    if (documentType === 33 && dispatch !== undefined) {
+        errors.push('dispatch sólo puede informarse para DTE 52')
     }
 
     if (!Array.isArray(items) || items.length === 0) {
@@ -78,7 +118,18 @@ export function validateBillingInput(input: unknown) {
             }
 
             if (!isNonNegativeNumber(item.unitPrice)) {
-                errors.push(`Item ${index + 1}: unitPrice no puede ser negativo`)
+                errors.push(
+                    `Item ${index + 1}: unitPrice no puede ser negativo`,
+                )
+            }
+
+            if (
+                item.discountPercentage !== undefined &&
+                !isValidDiscount(item.discountPercentage)
+            ) {
+                errors.push(
+                    `Item ${index + 1}: discountPercentage debe estar entre 0 y 100`,
+                )
             }
         })
     }
